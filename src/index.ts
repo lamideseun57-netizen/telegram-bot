@@ -9,7 +9,14 @@
 
 import { readFile } from "node:fs/promises";
 
-import { ConfigError, activeProfileName, loadConfig, networkLabel } from "./config.js";
+import {
+  ConfigError,
+  activeProfileName,
+  configProvenance,
+  formatProvenanceSummary,
+  loadConfig,
+  networkLabel,
+} from "./config.js";
 import { auditEntry, createAuditLog } from "./audit.js";
 import { InstanceLockError } from "./instanceLock.js";
 import { createBot, createNotifier, registerCommands, type SendExtra } from "./bot.js";
@@ -111,6 +118,15 @@ async function main(): Promise<void> {
   console.log(
     `[boot] preview mode  ${config.channelPreviewMode ? "enabled" : "disabled"}`,
   );
+
+  // Which setting came from where, then anything an operator can act on. Names
+  // and origins only: a value never reaches this log, so a boot log can be
+  // pasted into a ticket without redaction.
+  const provenance = configProvenance();
+  console.log(`[boot] config       ${formatProvenanceSummary(provenance)}`);
+  for (const warning of provenance.warnings) {
+    console.warn(`[boot] config       ${warning}`);
+  }
 
   const server = createRpcServer(config);
 

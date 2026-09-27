@@ -61,7 +61,7 @@ import {
   InstanceLockError,
   type InstanceLockHandle,
 } from "./instanceLock.js";
-import { explorerKeyboard, formatEvent, safeErrorMessage } from "./notifications/format.js";
+import { explorerKeyboard, formatEvent, formatPlainTextEvent, safeErrorMessage } from "./notifications/format.js";
 import { buildStatusSnapshot, writeStatusFile, type StatusSnapshot } from "./status.js";
 import { validateLedgerWindow, type LedgerWindow } from "./stellar/client.js";
 import {
@@ -1173,7 +1173,18 @@ export function createPoller(deps: PollerDeps) {
         text = formatEvent(config, event);
         if (text !== null) {
           const reply_markup = explorerKeyboard(config, event);
-          if (reply_markup) extra = { reply_markup };
+          // Plain-text twin for the MarkdownV2 parse fallback in createNotifier.
+          // Same event, no Markdown of any kind; the notifier sends it at most
+          // once, only when Telegram rejects the entities. Cursor accounting
+          // below is unchanged: either path counts as sent, neither as skipped.
+          const plainText = formatPlainTextEvent(config, event);
+          const eventRef = { eventId: event.eventId, ledger: event.ledger, source: event.source };
+          if (reply_markup || plainText !== null) {
+            extra = {
+              ...(reply_markup ? { reply_markup } : {}),
+              ...(plainText !== null ? { plainText, eventRef } : {}),
+            };
+          }
         }
       } catch (err) {
         status.eventsSkipped += 1;
