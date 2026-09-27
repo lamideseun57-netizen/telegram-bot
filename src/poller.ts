@@ -783,7 +783,7 @@ export async function waitForStartupHealth(
       const waitMs = Math.min(retryMs, remaining);
       console.warn(
         `[poller] startup RPC health attempt ${attempts} failed; ` +
-          `retrying in ${waitMs}ms (deadline ${deadlineMs}ms): ${errMessage(err)}`,
+          `retrying in ${waitMs}ms (deadline ${deadlineMs}ms): ${safeErrorMessage(err)}`,
       );
       await sleepFn(waitMs);
       if (now() >= deadlineAt) {
@@ -794,7 +794,7 @@ export async function waitForStartupHealth(
 
   throw new Error(
     `RPC startup health check failed after ${attempts} attempt(s) ` +
-      `within ${deadlineMs}ms deadline: ${errMessage(lastError)}`,
+      `within ${deadlineMs}ms deadline: ${safeErrorMessage(lastError)}`,
   );
 }
 
